@@ -85,6 +85,7 @@
     <Compile Include="Options\DHCPOptionServerListBase.cs" />
     <Compile Include="Options\DHCPOptionSubnetMask.cs" />
     <Compile Include="Options\DHCPOptionTFTPServerName.cs" />
+    <Compile Include="Options\DHCPOptionRelayAgentInformation.cs" />
     <Compile Include="Options\DHCPOptionVendorClassIdentifier.cs" />
     <Compile Include="Options\DHCPOptionVendorSpecificInformation.cs" />
     <Compile Include="DHCPServer.cs" />

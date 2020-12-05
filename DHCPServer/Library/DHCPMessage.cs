@@ -28,6 +28,7 @@ using System.Net.Sockets;
 using System.Net;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Linq;
 
 namespace GitHub.JPMikkers.DHCP
 {
@@ -229,6 +230,7 @@ namespace GitHub.JPMikkers.DHCP
             RegisterOption(new DHCPOptionRouter());
             RegisterOption(new DHCPOptionDomainNameServer());
             RegisterOption(new DHCPOptionNetworkTimeProtocolServers());
+            RegisterOption(new DHCPOptionRelayAgentInformation());
         }
 
         public DHCPMessage()
@@ -442,16 +444,29 @@ namespace GitHub.JPMikkers.DHCP
             ParseHelper.WriteZString(s, m_ServerHostName, 64);  // BOOTP legacy
             ParseHelper.WriteZString(s, m_BootFileName, 128);   // BOOTP legacy
             s.Write(new byte[] { 99, 130, 83, 99 }, 0, 4);  // options magic cookie
-            // write options
-            foreach (IDHCPOption option in m_Options)
+
+            // write all options except RelayAgentInformation
+            foreach (var option in m_Options.Where(x => x.OptionType != TDHCPOption.RelayAgentInformation))
             {
-                MemoryStream optionStream = new MemoryStream();
+                var optionStream = new MemoryStream();
                 option.ToStream(optionStream);
                 s.WriteByte((byte)option.OptionType);
                 s.WriteByte((byte)optionStream.Length);
                 optionStream.Position = 0;
                 CopyBytes(optionStream, s, (int)optionStream.Length);
             }
+
+            // RelayAgentInformation should be the last option before the end according to RFC 3046
+            foreach (var option in m_Options.Where(x => x.OptionType == TDHCPOption.RelayAgentInformation))
+            {
+                var optionStream = new MemoryStream();
+                option.ToStream(optionStream);
+                s.WriteByte((byte)option.OptionType);
+                s.WriteByte((byte)optionStream.Length);
+                optionStream.Position = 0;
+                CopyBytes(optionStream, s, (int)optionStream.Length);
+            }
+
             // write end option
             s.WriteByte(255);
             s.Flush();
