@@ -194,7 +194,15 @@ namespace GitHub.JPMikkers.DHCP
             lock (_lock)
             {
                 if (_leases.Count == 0)
-                    _leases = leases;
+                {
+                    foreach (var lease in leases)
+                    {
+                        if (!Pool.AllocateIPAddress(lease.Address).Equals(IPAddress.Any))
+                        {
+                            _leases.Add(lease);
+                        }
+                    }
+                }
             }
         }
 
