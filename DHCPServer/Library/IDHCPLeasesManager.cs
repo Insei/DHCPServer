@@ -20,5 +20,6 @@ namespace GitHub.JPMikkers.DHCP
         void MakeDynamic(DHCPLease lease);
         void Remove(DHCPLease lease);
         IPAddress FreeOlderUnusedIp();
+        void LoadSavedLeases(List<DHCPLease> leases);
     }
 }

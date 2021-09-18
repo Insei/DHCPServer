@@ -10,7 +10,7 @@ namespace GitHub.JPMikkers.DHCP
     public class DHCPLeasesManager : IDHCPLeasesManager
     {
         private readonly object _lock = new object();
-        private readonly List<DHCPLease> _leases;
+        private List<DHCPLease> _leases;
         private DHCPPool _pool;
         private Timer _leasesCheckTimer;
 
@@ -186,6 +186,15 @@ namespace GitHub.JPMikkers.DHCP
 
                 OnRemove?.Invoke(this, leaseToRemove.Clone());
                 return leaseToRemove.Address;
+            }
+        }
+
+        public void LoadSavedLeases(List<DHCPLease> leases)
+        {
+            lock (_lock)
+            {
+                if (_leases.Count == 0)
+                    _leases = leases;
             }
         }
 
