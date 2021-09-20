@@ -266,7 +266,8 @@ namespace GitHub.JPMikkers.DHCP
             //All others                MAY          
 
             response.Options.Add(new DHCPOptionIPAddressLeaseTime(lease.LeaseTime));
-            response.Options.Add(new DHCPOptionServerIdentifier(((IPEndPoint)_socket.LocalEndPoint).Address));
+            var serverIdentifierOption = _options.FirstOrDefault(o => o.Option.OptionType == TDHCPOption.ServerIdentifier);
+            response.Options.Add(serverIdentifierOption.Option ?? new DHCPOptionServerIdentifier(((IPEndPoint)_socket.LocalEndPoint).Address));
             AppendConfiguredOptions(sourceMsg, response);
             SendOfferOrAck(sourceMsg, response);
         }
@@ -303,7 +304,8 @@ namespace GitHub.JPMikkers.DHCP
             response.RelayAgentIPAddress = sourceMsg.RelayAgentIPAddress;
             response.ClientHardwareAddress = sourceMsg.ClientHardwareAddress;
             response.MessageType = TDHCPMessageType.NAK;
-            response.Options.Add(new DHCPOptionServerIdentifier(((IPEndPoint)_socket.LocalEndPoint).Address));
+            var serverIdentifierOption = _options.FirstOrDefault(o => o.Option.OptionType == TDHCPOption.ServerIdentifier);
+            response.Options.Add(serverIdentifierOption.Option ?? new DHCPOptionServerIdentifier(((IPEndPoint)_socket.LocalEndPoint).Address));
             if (sourceMsg.IsRequestedParameter(TDHCPOption.SubnetMask))
             {
                 var subMaskOption = _options.FirstOrDefault(o => o.Option.OptionType == TDHCPOption.SubnetMask);
@@ -375,7 +377,8 @@ namespace GitHub.JPMikkers.DHCP
             //All others                MAY                
 
             response.Options.Add(new DHCPOptionIPAddressLeaseTime(lease.LeaseTime));
-            response.Options.Add(new DHCPOptionServerIdentifier(((IPEndPoint)_socket.LocalEndPoint).Address));
+            var serverIdentifierOption = _options.FirstOrDefault(o => o.Option.OptionType == TDHCPOption.ServerIdentifier);
+            response.Options.Add(serverIdentifierOption.Option ?? new DHCPOptionServerIdentifier(((IPEndPoint)_socket.LocalEndPoint).Address));
             if (sourceMsg.IsRequestedParameter(TDHCPOption.SubnetMask))
             {
                 var subMaskOption = _options.FirstOrDefault(o => o.Option.OptionType == TDHCPOption.SubnetMask);
@@ -439,7 +442,8 @@ namespace GitHub.JPMikkers.DHCP
             //Maximum message size      MUST NOT              : ok
             //All others                MAY                
 
-            response.Options.Add(new DHCPOptionServerIdentifier(((IPEndPoint)_socket.LocalEndPoint).Address));
+            var serverIdentifierOption = _options.FirstOrDefault(o => o.Option.OptionType == TDHCPOption.ServerIdentifier);
+            response.Options.Add(serverIdentifierOption.Option ?? new DHCPOptionServerIdentifier(((IPEndPoint)_socket.LocalEndPoint).Address));
             if (sourceMsg.IsRequestedParameter(TDHCPOption.SubnetMask))
             {
                 var subMaskOption = _options.FirstOrDefault(o => o.Option.OptionType == TDHCPOption.SubnetMask);
