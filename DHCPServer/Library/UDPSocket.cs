@@ -25,6 +25,7 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
 
 namespace GitHub.JPMikkers.DHCP
 {
@@ -135,9 +136,16 @@ namespace GitHub.JPMikkers.DHCP
             }
             m_Socket.Bind(localEndPoint);
             m_LocalEndPoint = m_Socket.LocalEndPoint;
-
-            m_Socket.IOControl((IOControlCode)SIO_UDP_CONNRESET, new byte[] { 0, 0, 0, 0 }, null);
-
+            
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                m_Socket.IOControl((IOControlCode) SIO_UDP_CONNRESET, new byte[] {0, 0, 0, 0}, null);
+            }
+            else
+            {
+                m_Socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
+            }
+            
             BeginReceive();
         }
 
