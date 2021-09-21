@@ -46,8 +46,8 @@ namespace GitHub.JPMikkers.DHCP
         private List<OptionItem> _options = new List<OptionItem>();
         private int _minimumPacketSize = 576;
         
-        private DHCPOptionBroadcastAddress _broadcastAddressOption;
-        private DHCPOptionServerIdentifier _serverIdentifierOption;
+        protected DHCPOptionBroadcastAddress _broadcastAddressOption;
+        protected DHCPOptionServerIdentifier _serverIdentifierOption;
 
         #region IDHCPServer Members
 
