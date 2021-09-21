@@ -45,7 +45,9 @@ namespace GitHub.JPMikkers.DHCP
         private bool _active = false;
         private List<OptionItem> _options = new List<OptionItem>();
         private int _minimumPacketSize = 576;
-        //private Random m_Random = new Random();
+        
+        private DHCPOptionBroadcastAddress _broadcastAddressOption;
+        private DHCPOptionServerIdentifier _serverIdentifierOption;
 
         #region IDHCPServer Members
 
@@ -89,6 +91,27 @@ namespace GitHub.JPMikkers.DHCP
             _endPoint = new IPEndPoint(host, port);
             _options = options;
             LeasesManager = leasesManager;
+            
+            DetermineServerIdentifier();
+            DetermineBroadcastAddress();
+        }
+
+        private void DetermineServerIdentifier()
+        {
+            var serverIdentifier = _options.FirstOrDefault(o => o.Option.OptionType == TDHCPOption.ServerIdentifier);
+            if (serverIdentifier.Option != null)
+                _serverIdentifierOption = (DHCPOptionServerIdentifier)serverIdentifier.Option;
+            else
+                _serverIdentifierOption = new DHCPOptionServerIdentifier(((IPEndPoint)_socket.LocalEndPoint).Address);
+        }
+        
+        private void DetermineBroadcastAddress()
+        {
+            var broadcastAddress = _options.FirstOrDefault(o => o.Option.OptionType == TDHCPOption.BroadcastAddress);
+            if (broadcastAddress.Option != null)
+                _broadcastAddressOption = (DHCPOptionBroadcastAddress)broadcastAddress.Option;
+            else
+                _broadcastAddressOption =  new DHCPOptionBroadcastAddress(IPAddress.Broadcast);
         }
 
         public void Start()
@@ -266,8 +289,7 @@ namespace GitHub.JPMikkers.DHCP
             //All others                MAY          
 
             response.Options.Add(new DHCPOptionIPAddressLeaseTime(lease.LeaseTime));
-            var serverIdentifierOption = _options.FirstOrDefault(o => o.Option.OptionType == TDHCPOption.ServerIdentifier);
-            response.Options.Add(serverIdentifierOption.Option ?? new DHCPOptionServerIdentifier(((IPEndPoint)_socket.LocalEndPoint).Address));
+            response.Options.Add(_serverIdentifierOption);
             AppendConfiguredOptions(sourceMsg, response);
             SendOfferOrAck(sourceMsg, response);
         }
@@ -304,8 +326,7 @@ namespace GitHub.JPMikkers.DHCP
             response.RelayAgentIPAddress = sourceMsg.RelayAgentIPAddress;
             response.ClientHardwareAddress = sourceMsg.ClientHardwareAddress;
             response.MessageType = TDHCPMessageType.NAK;
-            var serverIdentifierOption = _options.FirstOrDefault(o => o.Option.OptionType == TDHCPOption.ServerIdentifier);
-            response.Options.Add(serverIdentifierOption.Option ?? new DHCPOptionServerIdentifier(((IPEndPoint)_socket.LocalEndPoint).Address));
+            response.Options.Add(_serverIdentifierOption);
             if (sourceMsg.IsRequestedParameter(TDHCPOption.SubnetMask))
             {
                 var subMaskOption = _options.FirstOrDefault(o => o.Option.OptionType == TDHCPOption.SubnetMask);
@@ -377,8 +398,7 @@ namespace GitHub.JPMikkers.DHCP
             //All others                MAY                
 
             response.Options.Add(new DHCPOptionIPAddressLeaseTime(lease.LeaseTime));
-            var serverIdentifierOption = _options.FirstOrDefault(o => o.Option.OptionType == TDHCPOption.ServerIdentifier);
-            response.Options.Add(serverIdentifierOption.Option ?? new DHCPOptionServerIdentifier(((IPEndPoint)_socket.LocalEndPoint).Address));
+            response.Options.Add(_serverIdentifierOption);
             if (sourceMsg.IsRequestedParameter(TDHCPOption.SubnetMask))
             {
                 var subMaskOption = _options.FirstOrDefault(o => o.Option.OptionType == TDHCPOption.SubnetMask);
@@ -441,9 +461,8 @@ namespace GitHub.JPMikkers.DHCP
             //Server identifier         MUST                  : ok
             //Maximum message size      MUST NOT              : ok
             //All others                MAY                
-
-            var serverIdentifierOption = _options.FirstOrDefault(o => o.Option.OptionType == TDHCPOption.ServerIdentifier);
-            response.Options.Add(serverIdentifierOption.Option ?? new DHCPOptionServerIdentifier(((IPEndPoint)_socket.LocalEndPoint).Address));
+            
+            response.Options.Add(_serverIdentifierOption);
             if (sourceMsg.IsRequestedParameter(TDHCPOption.SubnetMask))
             {
                 var subMaskOption = _options.FirstOrDefault(o => o.Option.OptionType == TDHCPOption.SubnetMask);
@@ -483,8 +502,9 @@ namespace GitHub.JPMikkers.DHCP
                     // set, then the server broadcasts DHCPOFFER and DHCPACK messages to
                     // 0xffffffff. If the broadcast bit is not set and 'giaddr' is zero and
                     // 'ciaddr' is zero, then the server unicasts DHCPOFFER and DHCPACK
-                    // messages to the client's hardware address and 'yiaddr' address.  
-                    SendMessage(response, new IPEndPoint(IPAddress.Broadcast, 68));
+                    // messages to the client's hardware address and 'yiaddr' address.
+                    
+                    SendMessage(response, new IPEndPoint(_broadcastAddressOption.IPAddress, 68));
                 }
             }
         }
@@ -496,7 +516,7 @@ namespace GitHub.JPMikkers.DHCP
 
             if (dhcpOptionServerIdentifier != null)
             {
-                if (dhcpOptionServerIdentifier.IPAddress.Equals(EndPoint.Address))
+                if (dhcpOptionServerIdentifier.IPAddress.Equals(_serverIdentifierOption.IPAddress))
                 {
                     result = true;
                 }
@@ -526,7 +546,7 @@ namespace GitHub.JPMikkers.DHCP
                 if (dhcpOptionServerIdentifier != null)
                 {
                     // there is a server identifier: the message is in response to a DHCPOFFER
-                    if (dhcpOptionServerIdentifier.IPAddress.Equals(_endPoint.Address))
+                    if (dhcpOptionServerIdentifier.IPAddress.Equals(_serverIdentifierOption.IPAddress))
                     {         
                         // it's a response to OUR offer.
                         // but did we actually offer one?
